@@ -33,7 +33,7 @@ module.exports = class HomeController extends Warden.Controller
     view = @reuse MyView 
 
 # app/controllers/foo-controller.coffee
-module.exports = class HomeController extends Warden.Controller
+module.exports = class FooController extends Warden.Controller
   beforeAction: (req) ->
     @reuse Layout
   index: (req) ->
