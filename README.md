@@ -52,10 +52,10 @@ if you want to arrange controllers allocation, Override `Warden#findController`
 ```coffeescript
 Warden.prototype.findController = (controllerName) ->
   switch controllerName
-		when 'home'
-			class HomeController extends Warden.Controller
-			  index: ->
-				  'something your logic'
+    when 'home'
+      class HomeController extends Warden.Controller
+        index: ->
+         'something your logic'
 ```
 
 Default expects `require('controllers/' + controlleName + '-controller')` by AMD.
