@@ -262,11 +262,18 @@
       used = find(this.lastUsings, function(used) {
         return used.constructor === cls;
       });
-      return this.usings.push(used != null ? used : new cls);
+      if (used == null) {
+        used = new cls;
+      }
+      this.usings.push(used);
+      return used;
     };
 
     Controller.prototype.use = function(cls) {
-      return this.usings.push(new cls);
+      var instance;
+      instance = new cls;
+      this.usings.push(instance);
+      return instance;
     };
 
     Controller.prototype.navigate = function(path) {

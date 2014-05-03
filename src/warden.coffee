@@ -149,10 +149,14 @@ class Warden.Controller
     throw 'not newable' unless cls.constructor
 
     used = find @lastUsings, (used) -> used.constructor is cls
-    @usings.push (used ? new cls)
+    used ?= new cls
+    @usings.push used
+    used
 
   use: (cls) ->
-    @usings.push new cls
+    instance = new cls
+    @usings.push instance
+    instance
 
   navigate: (path) =>
     Warden.navigate(path, @pushState)
