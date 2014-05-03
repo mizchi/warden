@@ -28,15 +28,15 @@ class MyView
 # app/controllers/home-controller.coffee
 module.exports = class HomeController extends Warden.Controller
   beforeAction: (req) ->
-	  @reuse Layout
-	index: (req) ->
-	  view = @reuse MyView 
+    @reuse Layout
+  index: (req) ->
+    view = @reuse MyView 
 
 # app/controllers/foo-controller.coffee
 module.exports = class HomeController extends Warden.Controller
   beforeAction: (req) ->
-	  @reuse Layout
-	index: (req) ->
+    @reuse Layout
+  index: (req) ->
 
 # app/initialize.coffee
 $ ->
