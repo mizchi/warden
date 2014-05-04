@@ -266,16 +266,23 @@ Warden = (function(_super) {
     return Warden.__super__.constructor.apply(this, arguments);
   }
 
-  Warden.navigate = function(path, pushState) {
-    if (pushState == null) {
-      pushState = false;
+  Warden.replaceLinksToHashChange = function() {
+    if (typeof $ === "undefined" || $ === null) {
+      throw 'Require jQuery or zepto';
     }
+    return $('body').on('click', 'a', (function(_this) {
+      return function(event) {
+        var href;
+        event.preventDefault();
+        href = $(event.target).attr('href').replace(/^(#|\/)/, '');
+        return Warden.navigate(href);
+      };
+    })(this));
+  };
+
+  Warden.navigate = function(path) {
     path = path.replace(/^(#|\/)/, '');
-    if (pushState) {
-      return history.pushState({}, "", '/' + path);
-    } else {
-      return location.href = '#' + path;
-    }
+    return location.href = '#' + path;
   };
 
   Warden.prototype.navigate = function(path) {
@@ -302,12 +309,18 @@ Warden = (function(_super) {
           pushState: _this.pushState
         });
         _this.currentController.setLastUsings((_ref2 = lastController.usings) != null ? _ref2 : []);
-        return continueAnyway(_this.currentController.beforeAction(req), function() {
-          return continueAnyway(_this.currentController[actionName](req), function() {
+        return continueAnyway(_this.currentController.beforeAction(req.params), function() {
+          return continueAnyway(_this.currentController[actionName](req.params), function() {
             _this.currentController.fix();
             return continueAnyway(typeof lastController.dispose === "function" ? lastController.dispose() : void 0, function() {
-              return continueAnyway(_this.currentController.afterAction(req), function() {
-                return _this.ready = true;
+              return continueAnyway(_this.currentController.afterAction(req.params), function() {
+                try {
+                  return window.dispatchEvent(new CustomEvent('warden:routed', {
+                    req: req,
+                    controllerName: controllerName,
+                    actionName: actionName
+                  }));
+                } catch (_error) {}
               });
             });
           });
@@ -333,53 +346,90 @@ Warden.Controller = (function() {
     this.usings = [];
   }
 
+  Controller.findInstance = function(usings, target) {
+    return find(usings, function(using) {
+      if ((typof(target)) === 'string') {
+        return using.key === target;
+      } else if (target instanceof Function) {
+        return using.instance.constructor === target;
+      } else if (target instanceof Object) {
+        return using.instance === target;
+      }
+    });
+  };
+
+  Controller.prototype._createInstance = function(maybeNewable) {
+    if (maybePromise instanceof Function) {
+      return new maybeNewable;
+    } else if (maybeNewable instanceof Object) {
+      return maybeNewable;
+    }
+  };
+
   Controller.prototype.setLastUsings = function(lastUsings) {
     this.lastUsings = lastUsings;
   };
 
-  Controller.prototype.reuse = function(cls) {
-    var used;
+  Controller.prototype.reuse = function(target, maybeNewable) {
+    var used, _ref;
+    if (maybeNewable == null) {
+      maybeNewable = null;
+    }
     if (this.fixed) {
-      throw 'Post initialized reuse exception';
+      throw 'Post fixed reuse exception';
     }
-    if (!cls.constructor) {
-      throw 'not newable';
+    used = (_ref = this.constructor.findInstance(this.lastUsings, targe)) != null ? _ref : this._createInstance(maybeNewable);
+    if ((typof(target)) === 'string') {
+      this.usings.push({
+        key: target,
+        instance: used
+      });
+    } else if (target instanceof Function) {
+      this.usings.push({
+        key: used,
+        instance: used
+      });
     }
-    used = find(this.lastUsings, function(used) {
-      return used.constructor === cls;
-    });
-    if (used == null) {
-      used = new cls;
-    }
-    this.usings.push(used);
     return used;
   };
 
-  Controller.prototype.use = function(cls) {
+  Controller.prototype.use = function(target, maybeNewable) {
     var instance;
-    instance = new cls;
-    this.usings.push(instance);
+    instance = this.constructor.findInstance(this.usings, target);
+    if (instance != null) {
+      return instance;
+    }
+    if ((typof(target)) === 'string') {
+      instance = this._createInstance(maybeNewable);
+      this.usings.push({
+        key: target,
+        instance: instance
+      });
+    } else {
+      instance = this._createInstance(target);
+      this.usings.push({
+        key: instance,
+        instance: instance
+      });
+    }
     return instance;
   };
 
   Controller.prototype.navigate = function(path) {
-    return Warden.navigate(path, this.pushState);
+    return Warden.navigate(path);
   };
 
   Controller.prototype.fix = function() {
-    var alsoUsed, currentUsedList, used, _i, _len, _ref;
-    currentUsedList = [];
+    var alsoUsed, used, _i, _len, _ref;
+    if (this.fixed) {
+      throw 'Warden.Controller#fix can be called only once';
+    }
     _ref = this.lastUsings;
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
       used = _ref[_i];
-      alsoUsed = find(this.usings, (function(_this) {
-        return function(using) {
-          return using.constructor === used.constructor;
-        };
-      })(this));
-      if (!alsoUsed) {
-        used.dispose();
-        this.lastUsings.splice(this.lastUsings.indexOf(used), 1);
+      alsoUsed = this.constructor.findInstance(this.usings, used.key);
+      if (alsoUsed == null) {
+        used.instance.dispose();
       }
     }
     this.fixed = true;
@@ -390,9 +440,9 @@ Warden.Controller = (function() {
     return delete this.usings;
   };
 
-  Controller.prototype.beforeAction = function(req) {};
+  Controller.prototype.beforeAction = function(params) {};
 
-  Controller.prototype.afterAction = function(req) {};
+  Controller.prototype.afterAction = function(params) {};
 
   return Controller;
 

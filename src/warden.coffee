@@ -10,12 +10,17 @@ find = (list, fn) ->
 {Grapnel} = require './grapnel'
 
 class Warden extends Grapnel
-  @navigate: (path, pushState = false) =>
+  @replaceLinksToHashChange: ->
+    # TODO: Remove dependency to jQuery
+    throw 'Require jQuery or zepto' unless $?
+    $('body').on 'click', 'a', (event) =>
+      event.preventDefault()
+      href = $(event.target).attr('href').replace /^(#|\/)/, ''
+      Warden.navigate(href)
+
+  @navigate: (path) =>
     path = path.replace(/^(#|\/)/, '')
-    if pushState
-      history.pushState {}, "", '/'+path
-    else
-      location.href = '#'+path
+    location.href = '#'+path
 
   navigate: (path) =>
     Warden.navigate(path, @pushState)
@@ -34,12 +39,12 @@ class Warden extends Grapnel
       @currentController = new Controller {@pushState}
       @currentController.setLastUsings (lastController.usings ? [])
 
-      continueAnyway @currentController.beforeAction(req), =>
-        continueAnyway @currentController[actionName](req), =>
+      continueAnyway @currentController.beforeAction(req.params), =>
+        continueAnyway @currentController[actionName](req.params), =>
           @currentController.fix()
           continueAnyway lastController.dispose?(), =>
-            continueAnyway @currentController.afterAction(req), =>
-              @ready = true
+            continueAnyway @currentController.afterAction(req.params), =>
+              try window.dispatchEvent new CustomEvent 'warden:routed', {req, controllerName, actionName}
 
     @get route, action
 
@@ -50,44 +55,66 @@ class Warden.Controller
     @lastUsings = []
     @usings = []
 
+  @findInstance: (usings, target) ->
+    find usings, (using) ->
+      if (typof target) is 'string'
+        using.key is target
+      else if target instanceof Function
+        using.instance.constructor is target
+      else if target instanceof Object
+        using.instance is target
+
+  _createInstance: (maybeNewable) ->
+    if maybePromise instanceof Function
+      new maybeNewable
+    else if maybeNewable instanceof Object
+      maybeNewable
+
   setLastUsings: (@lastUsings) ->
 
-  reuse: (cls) =>
-    throw 'Post initialized reuse exception' if @fixed
-    throw 'not newable' unless cls.constructor
+  reuse: (target, maybeNewable = null) =>
+    throw 'Post fixed reuse exception' if @fixed
 
-    used = find @lastUsings, (used) -> used.constructor is cls
-    used ?= new cls
-    @usings.push used
+    used = (@constructor.findInstance @lastUsings, targe) ? @_createInstance(maybeNewable)
+    if (typof target) is 'string'
+      @usings.push {key: target, instance: used}
+    else if target instanceof Function
+      @usings.push {key: used, instance: used}
     used
 
-  use: (cls) ->
-    instance = new cls
-    @usings.push instance
+  use: (target, maybeNewable) ->
+    instance = @constructor.findInstance(@usings, target)
+    return instance if instance?
+
+    if (typof target) is 'string'
+      instance = @_createInstance maybeNewable
+      @usings.push {key: target, instance: instance}
+    else
+      instance = @_createInstance target
+      @usings.push {key: instance, instance: instance}
     instance
 
-  navigate: (path) =>
-    Warden.navigate(path, @pushState)
+  navigate: (path) => Warden.navigate(path)
 
   fix: ->
-    currentUsedList = []
+    throw 'Warden.Controller#fix can be called only once' if @fixed
+
+    # dispose lastUsings
     for used in @lastUsings
-      alsoUsed = find @usings, (using) =>
-        using.constructor is used.constructor
-      unless alsoUsed
-        used.dispose()
-        @lastUsings.splice @lastUsings.indexOf(used), 1
+      alsoUsed = @constructor.findInstance(@usings, used.key)
+      unless alsoUsed? then used.instance.dispose()
+
     @fixed = true
     delete @lastUsings
 
   dispose: =>
     delete @usings
 
-  beforeAction: (req) ->
+  beforeAction: (params) -> # override me
 
-  afterAction: (req) ->
+  afterAction: (params) -> # override me
 
 if 'function' is typeof window.define
-  window.define (require)-> Warden
+  window.define (require) -> Warden
 else
   window.Warden = Warden
