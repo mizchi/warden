@@ -378,7 +378,8 @@ Warden.Controller = (function() {
     if (this.fixed) {
       throw 'Post fixed reuse exception';
     }
-    used = (_ref = this.constructor.findInstance(this.lastUsings, targe)) != null ? _ref : this._createInstance(maybeNewable);
+    used = (_ref = this.constructor.findInstance(this.lastUsings, target)) != null ? _ref : this._createInstance(maybeNewable);
+    console.log('used', used);
     if ((typof(target)) === 'string') {
       this.usings.push({
         key: target,

@@ -75,7 +75,9 @@ class Warden.Controller
   reuse: (target, maybeNewable = null) =>
     throw 'Post fixed reuse exception' if @fixed
 
-    used = (@constructor.findInstance @lastUsings, targe) ? @_createInstance(maybeNewable)
+    used = (@constructor.findInstance @lastUsings, target) ? @_createInstance(maybeNewable)
+    console.log 'used',used
+
     if (typof target) is 'string'
       @usings.push {key: target, instance: used}
     else if target instanceof Function
