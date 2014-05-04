@@ -12,17 +12,20 @@ This repository's base is `EngineeringMode/Grapnel.js` https://github.com/Engine
 - Reuse continuous instances after routing
 - All steps can handle with ES6's `Promise`
 
+`Warden` is mainly designed to use with [yyx990803/vue](https://github.com/yyx990803/vue "yyx990803/vue").
+
 ## How to use
 
-Create Controller at first
-
-`app/controllers/home-controller.coffee`
+This is an ideological example.
 
 ```coffeescript
 # resouce target must be implemented with `dispose` function
+
 class Layout
   dispose: ->
-class MyView
+class HomeView
+  dispose: ->
+class FooView
   dispose: ->
 
 # app/controllers/home-controller.coffee
@@ -30,13 +33,16 @@ module.exports = class HomeController extends Warden.Controller
   beforeAction: (req) ->
     @reuse Layout
   index: (req) ->
-    view = @reuse MyView 
+    home = @reuse HomeView # Create instance or reuse from previous controller
 
 # app/controllers/foo-controller.coffee
-module.exports = class HomeController extends Warden.Controller
+module.exports = class FooController extends Warden.Controller
   beforeAction: (req) ->
     @reuse Layout
   index: (req) ->
+    foo1 = @reuse 'foo1', FooView # named reusing
+    foo2 = @reuse 'foo2', FooView # another instance
+		disposable = @reuse {dispose: -> console.log 'It will be called by routing'}
 
 # app/initialize.coffee
 $ ->
@@ -44,6 +50,8 @@ $ ->
   router.match '', 'home#index'
   router.match 'foo/:bar', 'foo#index'
 ```
+
+## Tactics
 
 `HomeController` has `MyView` but `FooController` doesn't have it. So after routing from '' to '/foo', `MyView` will be dispose. `Layout` will alive in this case.
 
@@ -64,33 +72,23 @@ Default expects `require('controllers/' + controlleName + '-controller')` by AMD
 
 ### Warden
 
-#### Warden.navigate(path)
-fire routing
-
-#### Warden#match(path: string, controllerAction: string)
-Add routing pattern
+- `Warden.navigate(path)` Fire routing
+- `Warden#match(path: string, controllerAction: string)` Add routing pattern
+- `Warden.replaceLinksToHashChange()` Replace `a` tag link event by jQuery (jQuery or zepto needed now)
 
 ### Warden.Controller
-#### Warden.Controller#beforeAction() : => Promise?
-First callback before action. If you return promise, router wait it.
 
-#### Warden.Controller#afterAction() : => Promise?
-Last callback after action. If you return promise, router wait it.
-
-#### Warden.Controller#[action] : => Promise?
-
-Callback fired by router. If you return promise, router wait it.
-
-#### Warden.Controller#reuse(Class)
-
-Reuse or create instance of Class. Class can't take constructor parameters and should be implemented with `dispose`.
-
-#### Warden.Controller#use(Class)
-
-Create instance of Class. Instance create by this function will be judged dead or alive by next routing.
+- `Warden.Controller#reuse(Class)` Reuse instance of Class by matching constructor or create instance with new
+- `Warden.Controller#reuse({dispose()})` Reuse disposable object or register
+- `Warden.Controller#reuse(name, Class)` Reuse instance of Class by name
+- `Warden.Controller#reuse(name, {dispose()})` Reuse disposable object by name
+- `Warden.Controller#use(Class)` Create instance of Class. Instance create by this function will be judged dead or alive by next routing.
+- `Warden.Controller#beforeAction(params) : => Promise?` First callback before action. If you return promise, router wait it.
+- `Warden.Controller#afterAction(params) : => Promise?` Last callback after action. If you return promise, router wait it.
+- `Warden.Controller\#[action](params) : => Promise?` Callback fired by router. If you return promise, router wait it.
 
 ## TODO
 
 - Add testings
-- bower registration
-- PushState support(wip)
+- PushState support
+- Independent from Grapnel
