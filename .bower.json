@@ -1,6 +1,6 @@
 {
   "name": "warden",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "main": "warden.js",
   "authors": [
     "Koutarou Chikuba <miz404@gmail.com>"
