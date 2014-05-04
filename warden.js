@@ -359,7 +359,7 @@ Warden.Controller = (function() {
   };
 
   Controller.prototype._createInstance = function(maybeNewable) {
-    if (maybePromise instanceof Function) {
+    if (maybeNewable instanceof Function) {
       return new maybeNewable;
     } else if (maybeNewable instanceof Object) {
       return maybeNewable;

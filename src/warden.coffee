@@ -65,7 +65,7 @@ class Warden.Controller
         using.instance is target
 
   _createInstance: (maybeNewable) ->
-    if maybePromise instanceof Function
+    if maybeNewable instanceof Function
       new maybeNewable
     else if maybeNewable instanceof Object
       maybeNewable
