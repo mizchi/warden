@@ -347,7 +347,8 @@ Warden.Controller = (function() {
   }
 
   Controller.findInstance = function(usings, target) {
-    return find(usings, function(using) {
+    var _ref;
+    return (_ref = find(usings, function(using) {
       if ((typeof target) === 'string') {
         return using.key === target;
       } else if (target instanceof Function) {
@@ -355,7 +356,7 @@ Warden.Controller = (function() {
       } else if (target instanceof Object) {
         return using.instance === target;
       }
-    });
+    })) != null ? _ref.instance : void 0;
   };
 
   Controller.prototype._createInstance = function(maybeNewable) {
@@ -397,7 +398,7 @@ Warden.Controller = (function() {
     if (this.fixed) {
       throw 'Post fixed reuse exception';
     }
-    return _reuseFrom(this.lastUsings, target, maybeNewable);
+    return this._reuseFrom(this.lastUsings, target, maybeNewable);
   };
 
   Controller.prototype.use = function(target, maybeNewable) {
@@ -409,7 +410,7 @@ Warden.Controller = (function() {
     if (instance != null) {
       return instance;
     }
-    return _reuseFrom(this.usings, target, maybeNewable);
+    return this._reuseFrom(this.usings, target, maybeNewable);
   };
 
   Controller.prototype.navigate = function(path) {

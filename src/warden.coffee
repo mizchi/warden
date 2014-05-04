@@ -56,13 +56,14 @@ class Warden.Controller
     @usings = []
 
   @findInstance: (usings, target) ->
-    find usings, (using) ->
+    (find usings, (using) ->
       if (typeof target) is 'string'
         using.key is target
       else if target instanceof Function
         using.instance.constructor is target
       else if target instanceof Object
         using.instance is target
+    )?.instance
 
   _createInstance: (maybeNewable) ->
     if maybeNewable instanceof Function
@@ -86,13 +87,13 @@ class Warden.Controller
 
   reuse: (target, maybeNewable = null) =>
     throw 'Post fixed reuse exception' if @fixed
-    _reuseFrom @lastUsings, target, maybeNewable
+    @_reuseFrom @lastUsings, target, maybeNewable
 
   use: (target, maybeNewable) ->
     throw 'Pre fixed use exception' unless @fixed
     instance = @constructor.findInstance(@usings, target)
     return instance if instance?
-    _reuseFrom @usings, target, maybeNewable
+    @_reuseFrom @usings, target, maybeNewable
 
   navigate: (path) => Warden.navigate(path)
 
