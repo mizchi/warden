@@ -89,7 +89,5 @@ class Warden.Controller
 
 if 'function' is typeof window.define
   window.define (require)-> Warden
-else if 'object' is typeof exports
-  module.exports = Warden
 else
   window.Warden = Warden

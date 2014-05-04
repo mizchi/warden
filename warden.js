@@ -402,8 +402,6 @@ if ('function' === typeof window.define) {
   window.define(function(require) {
     return Warden;
   });
-} else if ('object' === typeof exports) {
-  module.exports = Warden;
 } else {
   window.Warden = Warden;
 }
