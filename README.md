@@ -30,19 +30,21 @@ class FooView
 
 # app/controllers/home-controller.coffee
 module.exports = class HomeController extends Warden.Controller
-  beforeAction: (req) ->
+  beforeAction: (params) ->
     @reuse Layout
-  index: (req) ->
+  index: (params) ->
     home = @reuse HomeView # Create instance or reuse from previous controller
 
 # app/controllers/foo-controller.coffee
 module.exports = class FooController extends Warden.Controller
-  beforeAction: (req) ->
+  beforeAction: (params) ->
     @reuse Layout
-  index: (req) ->
+  index: (params) ->
+    console.log params.bar # extract params
     foo1 = @reuse 'foo1', FooView # named reusing
     foo2 = @reuse 'foo2', FooView # another instance
     disposable = @reuse {dispose: -> console.log 'It will be called by routing'}
+
 
 # app/initialize.coffee
 $ ->
