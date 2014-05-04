@@ -42,7 +42,7 @@ module.exports = class FooController extends Warden.Controller
   index: (req) ->
     foo1 = @reuse 'foo1', FooView # named reusing
     foo2 = @reuse 'foo2', FooView # another instance
-		disposable = @reuse {dispose: -> console.log 'It will be called by routing'}
+    disposable = @reuse {dispose: -> console.log 'It will be called by routing'}
 
 # app/initialize.coffee
 $ ->
