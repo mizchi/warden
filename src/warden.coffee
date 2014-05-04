@@ -57,7 +57,7 @@ class Warden.Controller
 
   @findInstance: (usings, target) ->
     find usings, (using) ->
-      if (typof target) is 'string'
+      if (typeof target) is 'string'
         using.key is target
       else if target instanceof Function
         using.instance.constructor is target
@@ -78,7 +78,7 @@ class Warden.Controller
     used = (@constructor.findInstance @lastUsings, target) ? @_createInstance(maybeNewable)
     console.log 'used',used
 
-    if (typof target) is 'string'
+    if (typeof target) is 'string'
       @usings.push {key: target, instance: used}
     else if target instanceof Function
       @usings.push {key: used, instance: used}
@@ -88,7 +88,7 @@ class Warden.Controller
     instance = @constructor.findInstance(@usings, target)
     return instance if instance?
 
-    if (typof target) is 'string'
+    if (typeof target) is 'string'
       instance = @_createInstance maybeNewable
       @usings.push {key: target, instance: instance}
     else

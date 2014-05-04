@@ -348,7 +348,7 @@ Warden.Controller = (function() {
 
   Controller.findInstance = function(usings, target) {
     return find(usings, function(using) {
-      if ((typof(target)) === 'string') {
+      if ((typeof target) === 'string') {
         return using.key === target;
       } else if (target instanceof Function) {
         return using.instance.constructor === target;
@@ -380,7 +380,7 @@ Warden.Controller = (function() {
     }
     used = (_ref = this.constructor.findInstance(this.lastUsings, target)) != null ? _ref : this._createInstance(maybeNewable);
     console.log('used', used);
-    if ((typof(target)) === 'string') {
+    if ((typeof target) === 'string') {
       this.usings.push({
         key: target,
         instance: used
@@ -400,7 +400,7 @@ Warden.Controller = (function() {
     if (instance != null) {
       return instance;
     }
-    if ((typof(target)) === 'string') {
+    if ((typeof target) === 'string') {
       instance = this._createInstance(maybeNewable);
       this.usings.push({
         key: target,
