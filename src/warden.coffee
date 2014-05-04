@@ -10,6 +10,14 @@ find = (list, fn) ->
 {Grapnel} = require './grapnel'
 
 class Warden extends Grapnel
+  constructor: (opts = {}) ->
+    super
+    if opts.routes instanceof Function
+      opts.routes(@match)
+    else if opts.routes instanceof Object
+      for route, action of routes
+        @match route, action
+
   @replaceLinksToHashChange: ->
     # TODO: Remove dependency to jQuery
     throw 'Require jQuery or zepto' unless $?
@@ -63,7 +71,7 @@ class Warden.Controller
         using.instance.constructor is target
       else if target instanceof Object
         using.instance is target
-    )?.instance
+    )?.instance ? null
 
   _createInstance: (maybeNewable) ->
     if maybeNewable instanceof Function
