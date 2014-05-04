@@ -359,10 +359,19 @@ Warden.Controller = (function() {
   };
 
   Controller.prototype._createInstance = function(maybeNewable) {
+    var _ref;
     if (maybeNewable instanceof Function) {
+      if (!(maybeNewable.prototype.dispose instanceof Function)) {
+        console.warn("This class does not have dispose", maybeNewable);
+      }
       return new maybeNewable;
     } else if (maybeNewable instanceof Object) {
+      if (!(maybeNewable.dispose instanceof Function)) {
+        console.warn("This object does not have dispose", maybeNewable);
+      }
       return maybeNewable;
+    } else {
+      throw new Error("Warden can't compose " + ((_ref = maybeNewable != null ? typeof maybeNewable.toString === "function" ? maybeNewable.toString() : void 0 : void 0) != null ? _ref : maybeNewable));
     }
   };
 
@@ -370,50 +379,37 @@ Warden.Controller = (function() {
     this.lastUsings = lastUsings;
   };
 
+  Controller.prototype._reuseFrom = function(usings, target, maybeNewable) {
+    var instance, key, _ref;
+    instance = (_ref = this.constructor.findInstance(usings, target)) != null ? _ref : this._createInstance(maybeNewable != null ? maybeNewable : target);
+    key = (typeof target) === 'string' ? target : instance;
+    this.usings.push({
+      instance: instance,
+      key: key
+    });
+    return instance;
+  };
+
   Controller.prototype.reuse = function(target, maybeNewable) {
-    var used, _ref;
     if (maybeNewable == null) {
       maybeNewable = null;
     }
     if (this.fixed) {
       throw 'Post fixed reuse exception';
     }
-    used = (_ref = this.constructor.findInstance(this.lastUsings, target)) != null ? _ref : this._createInstance(maybeNewable);
-    console.log('used', used);
-    if ((typeof target) === 'string') {
-      this.usings.push({
-        key: target,
-        instance: used
-      });
-    } else if (target instanceof Function) {
-      this.usings.push({
-        key: used,
-        instance: used
-      });
-    }
-    return used;
+    return _reuseFrom(this.lastUsings, target, maybeNewable);
   };
 
   Controller.prototype.use = function(target, maybeNewable) {
     var instance;
+    if (!this.fixed) {
+      throw 'Pre fixed use exception';
+    }
     instance = this.constructor.findInstance(this.usings, target);
     if (instance != null) {
       return instance;
     }
-    if ((typeof target) === 'string') {
-      instance = this._createInstance(maybeNewable);
-      this.usings.push({
-        key: target,
-        instance: instance
-      });
-    } else {
-      instance = this._createInstance(target);
-      this.usings.push({
-        key: instance,
-        instance: instance
-      });
-    }
-    return instance;
+    return _reuseFrom(this.usings, target, maybeNewable);
   };
 
   Controller.prototype.navigate = function(path) {

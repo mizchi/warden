@@ -66,35 +66,33 @@ class Warden.Controller
 
   _createInstance: (maybeNewable) ->
     if maybeNewable instanceof Function
+      unless maybeNewable::dispose instanceof Function
+        console.warn("This class does not have dispose", maybeNewable)
       new maybeNewable
     else if maybeNewable instanceof Object
+      unless maybeNewable.dispose instanceof Function
+        console.warn("This object does not have dispose", maybeNewable)
       maybeNewable
+    else
+      throw new Error "Warden can't compose #{maybeNewable?.toString?() ? maybeNewable}"
 
   setLastUsings: (@lastUsings) ->
 
+  _reuseFrom: (usings, target, maybeNewable) ->
+    instance = (@constructor.findInstance usings, target) ? @_createInstance (maybeNewable ? target)
+    key = if (typeof target) is 'string' then target else instance
+    @usings.push {instance, key}
+    instance
+
   reuse: (target, maybeNewable = null) =>
     throw 'Post fixed reuse exception' if @fixed
-
-    used = (@constructor.findInstance @lastUsings, target) ? @_createInstance(maybeNewable)
-    console.log 'used',used
-
-    if (typeof target) is 'string'
-      @usings.push {key: target, instance: used}
-    else if target instanceof Function
-      @usings.push {key: used, instance: used}
-    used
+    _reuseFrom @lastUsings, target, maybeNewable
 
   use: (target, maybeNewable) ->
+    throw 'Pre fixed use exception' unless @fixed
     instance = @constructor.findInstance(@usings, target)
     return instance if instance?
-
-    if (typeof target) is 'string'
-      instance = @_createInstance maybeNewable
-      @usings.push {key: target, instance: instance}
-    else
-      instance = @_createInstance target
-      @usings.push {key: instance, instance: instance}
-    instance
+    _reuseFrom @usings, target, maybeNewable
 
   navigate: (path) => Warden.navigate(path)
 
