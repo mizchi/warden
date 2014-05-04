@@ -101,7 +101,7 @@ class Warden
     require "controllers/#{controllerName}-controller"
 
   @navigate: (path, pushState = false) =>
-    path = path.replace(/#|\//, '')
+    path = path.replace(/^(#|\/)/, '')
     if pushState
       history.pushState {}, "", '/'+path
     else

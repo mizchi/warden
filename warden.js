@@ -177,7 +177,7 @@
       if (pushState == null) {
         pushState = false;
       }
-      path = path.replace(/#|\//, '');
+      path = path.replace(/^(#|\/)/, '');
       if (pushState) {
         return history.pushState({}, "", '/' + path);
       } else {
